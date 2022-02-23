@@ -18,12 +18,6 @@ impl Token {
     fn new(kind: TokenKind, size: usize) -> Self {
         Token { kind, size }
     }
-    fn empty() -> Self {
-        Token {
-            kind: Empty,
-            size: 0,
-        }
-    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -42,20 +36,54 @@ pub enum TokenKind {
 
     Comment,
 
+    /// :
     Colon,
+    /// ;
     Semicolon,
+    /// ,
     Comma,
+    /// .
     Dot,
+    /// +
     Plus,
+    /// -
     Minus,
+    /// *
     Asterisk,
+    /// /
     Slash,
+    /// !
+    Exclamation,
+    /// @
+    At,
+    /// $
+    Dollar,
+    /// %
+    Percent,
+    /// ^
+    Caret,
+    /// &
+    Ampersand,
+    /// |
+    Pipe,
+    /// =
+    Eq,
+    /// <
+    Lt,
+    /// >
+    Gt,
 
+    /// (
     LeftParen,
+    /// )
     RightParen,
+    /// [
     LeftBracket,
+    /// ]
     RightBracket,
+    /// {
     LeftBrace,
+    /// }
     RightBrace,
 
     /// End of file
@@ -63,9 +91,6 @@ pub enum TokenKind {
 
     /// Any sequence that isn't expected by the lexer
     Unknown,
-
-    /// Helper token that does not contain anything
-    Empty,
 }
 
 /// Lex all tokens from input string
@@ -97,27 +122,44 @@ fn lex_single_token(data: &str) -> Token {
         '-' => Token::new(Minus, 1),
         '*' => Token::new(Asterisk, 1),
         '/' => Token::new(Slash, 1),
+        '!' => Token::new(Exclamation, 1),
+        '@' => Token::new(At, 1),
+        '$' => Token::new(Dollar, 1),
+        '%' => Token::new(Percent, 1),
+        '^' => Token::new(Caret, 1),
+        '&' => Token::new(Ampersand, 1),
+        '|' => Token::new(Pipe, 1),
+        '=' => Token::new(Eq, 1),
+        '<' => Token::new(Lt, 1),
+        '>' => Token::new(Gt, 1),
         '(' => Token::new(LeftParen, 1),
         ')' => Token::new(RightParen, 1),
         '[' => Token::new(LeftBracket, 1),
         ']' => Token::new(RightBracket, 1),
         '{' => Token::new(LeftBrace, 1),
         '}' => Token::new(RightBrace, 1),
+        '#' => lex_line_comment(data),
         '"' => lex_string_literal(data),
         c if c.is_digit(10) => lex_number_literal(data),
         c if is_identifier_start(c) => lex_identifier(data),
-        c if is_whitespace(c) => Token::new(Whitespace, c.len_utf8()),
+        c if is_whitespace(c) => lex_whitespace(data),
         _ => Token::new(Unknown, next.len_utf8()),
+    }
+}
+
+fn lex_line_comment(data: &str) -> Token {
+    // Ensure that first character is a pound
+    debug_assert_eq!(data.chars().next().unwrap(), '#');
+    let size = eat_while(data, |c| c != '\n').len();
+    Token {
+        kind: Comment,
+        size,
     }
 }
 
 fn lex_string_literal(data: &str) -> Token {
     // Ensure that first character is a double quote
-    match data.chars().next() {
-        Some('"') => {}
-        None | Some(_) => return Token::empty(),
-    };
-
+    debug_assert_eq!(data.chars().next().unwrap(), '"');
     let mut lexed_size = 1; // Skip first double quote
     let mut terminated = false;
     // Consume characters until reached unescaped double quote
@@ -151,12 +193,8 @@ fn size_of_next_symbol_in_string_literal(data: &str) -> usize {
 }
 
 fn lex_number_literal(data: &str) -> Token {
-    // Ensure that first character is a digit
-    match data.chars().next() {
-        Some(c) if !c.is_digit(10) => return Token::empty(),
-        None => return Token::empty(),
-        Some(_) => {}
-    };
+    // Ensure that first character is a  decimal digit
+    debug_assert!(data.chars().next().unwrap().is_digit(10));
 
     let first_two: String = data.chars().take(2).collect();
     let (base, prefix_size) = match first_two.as_str() {
@@ -206,12 +244,20 @@ fn lex_number_literal(data: &str) -> Token {
 
 fn lex_identifier(data: &str) -> Token {
     // Ensure that first character is a letter
-    match data.chars().next().map(is_identifier_start) {
-        Some(false) | None => return Token::empty(),
-        Some(true) => Token {
-            kind: Identifier,
-            size: eat_while(data, is_identifier_char).len(),
-        },
+    debug_assert!(is_identifier_start(data.chars().next().unwrap()));
+    Token {
+        kind: Identifier,
+        size: eat_while(data, is_identifier_char).len(),
+    }
+}
+
+fn lex_whitespace(data: &str) -> Token {
+    // Ensure that first character is whitespace
+    debug_assert!(is_whitespace(data.chars().next().unwrap()));
+    let size = eat_while(data, is_whitespace).len();
+    Token {
+        kind: Whitespace,
+        size,
     }
 }
 

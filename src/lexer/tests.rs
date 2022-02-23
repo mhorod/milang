@@ -9,10 +9,6 @@ mod identifier {
     fn can_contain_letters() {
         assert_lexes_to("ident", "ident");
     }
-    #[test]
-    fn does_not_start_with_a_number() {
-        assert_lexes_to("1abc", "");
-    }
 
     #[test]
     fn can_contain_underscore() {
@@ -145,5 +141,17 @@ mod number_literal {
         let data = "123.456.789";
         let expected = "123.456";
         assert_eq!(lex_number_literal(data), lit!(expected, FloatLiteral, 10));
+    }
+}
+
+mod comment {
+    use super::*;
+    fn assert_lexes_to(data: &str, expected: &str) {
+        assert_eq!(&data[..lex_line_comment(data).size], expected);
+    }
+
+    #[test]
+    fn ends_before_line_break() {
+        assert_lexes_to("#comment\n", "#comment");
     }
 }
