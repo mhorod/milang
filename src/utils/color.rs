@@ -45,7 +45,12 @@ pub struct ColoredString {
 impl ColoredString {
     fn ansi_sequence(&self) -> String {
         let mut result = String::from("\x1b[");
-        let style_str: String = self.styles.iter().map(|s| s.to_code_str() + ";").collect();
+        let mut style_str: String = self.styles.iter().map(|s| s.to_code_str() + ";").collect();
+
+        if !self.has_color() {
+            style_str.pop();
+        }
+
         result.push_str(&style_str);
         match &self.fg {
             Some(c) => result.push_str(&c.to_fg_str()),
@@ -57,6 +62,10 @@ impl ColoredString {
 
     fn is_plain(&self) -> bool {
         self.fg.is_none() && self.bg.is_none() && self.styles.len() == 0
+    }
+
+    fn has_color(&self) -> bool {
+        self.fg.is_some() || self.bg.is_some()
     }
 }
 
