@@ -155,3 +155,48 @@ mod comment {
         assert_lexes_to("#comment\n", "#comment");
     }
 }
+
+mod lexer {
+    use super::*;
+    fn lex_str(data: &str) -> CompilingResult<Vec<ast::Token>> {
+        let source = Source::new("test_file".to_string(), data.to_string());
+        let source = Arc::from(source);
+        Lexer::new(&source).lex()
+    }
+
+    fn kinds(tokens: &Vec<ast::Token>) -> Vec<ast::TokenKind> {
+        tokens.iter().map(|t| t.kind).collect()
+    }
+    #[test]
+    fn ignores_whitespace() {
+        let result = lex_str("  \tan_identifier\t  ");
+        match result {
+            Ok(tokens) => assert_eq!(kinds(&tokens), vec![ast::Identifier]),
+            Err(_) => panic!("No error should be emitted."),
+        }
+    }
+
+    #[test]
+    fn lexing_unterminated_string_literal_emits_an_error() {
+        let result = lex_str(r#""abc"#);
+        match result {
+            Ok(_) => panic!("An error should be emitted."),
+            Err(report) => {
+                let err = &report.errors[0];
+                assert_eq!(err.kind, CompilerErrorKind::Error);
+                assert_eq!(err.code, CompilerError::UNTERMINATED_STRING_LITERAL);
+            }
+        }
+    }
+    #[test]
+    fn tokens_are_glued_from_left() {
+        let result = lex_str("<<=>>=");
+        match result {
+            Ok(tokens) => assert_eq!(
+                kinds(&tokens),
+                vec![ast::BinOpEq(ast::Shl), ast::BinOpEq(ast::Shr)]
+            ),
+            Err(_) => panic!("No error should be emitted."),
+        }
+    }
+}
