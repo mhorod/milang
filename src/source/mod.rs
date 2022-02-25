@@ -29,10 +29,23 @@ impl Span {
     }
 }
 
+impl<T: Into<usize>> From<std::ops::Range<T>> for Span {
+    fn from(r: std::ops::Range<T>) -> Self {
+        Self::from_range(r.start.into(), r.end.into())
+    }
+}
+
 pub fn span_union(left: Span, right: Span) -> Span {
     let begin = std::cmp::min(left.begin, right.begin);
     let end = std::cmp::max(left.end(), right.end());
     Span::from_range(begin, end)
+}
+
+/// Return union of spans in the vector if its non-empty
+/// None otherwise
+pub fn span_vec_union(spans: &Vec<Span>) -> Option<Span> {
+    let first = spans.first()?;
+    Some(spans.iter().fold(*first, |l, &r| span_union(l, r)))
 }
 
 /// Line and column in source file, both indexed from one
