@@ -58,13 +58,17 @@ impl CompilerErrorKind {
 
 // Error codes
 impl CompilerError {
+    // Lexical errors
     pub const UNKNOWN_TOKEN: u32 = 0;
     pub const UNTERMINATED_STRING_LITERAL: u32 = 1;
     pub const UNTERMINATED_CHAR_LITERAL: u32 = 2;
     pub const CHAR_LITERAL_HAS_TO_CONTAIN_ONE_CHARACTER: u32 = 3;
+
+    // Syntax errors
+    pub const UNEXPECTED_TOKEN: u32 = 4;
 }
 
-struct CompilerErrorBuilder {
+pub struct CompilerErrorBuilder {
     kind: Option<CompilerErrorKind>,
     code: Option<u32>,
     source: Option<Arc<Source>>,
@@ -121,7 +125,7 @@ impl CompilerErrorBuilder {
 }
 
 impl CompilerError {
-    fn error(code: u32) -> CompilerErrorBuilder {
+    pub fn error(code: u32) -> CompilerErrorBuilder {
         CompilerErrorBuilder::new()
             .add_kind(CompilerErrorKind::Error)
             .add_code(code)
@@ -197,40 +201,4 @@ where
     fn normalize_whitespace(self) -> String {
         self.into().replace('\t', "    ") // Replace tab with four spaces for consistent error display
     }
-}
-
-/// Met character unrecongizable by the lexer
-pub fn unknown_token(source: Arc<Source>, token: &str, span: Span) -> CompilerError {
-    CompilerError::error(CompilerError::UNKNOWN_TOKEN)
-        .add_span(span)
-        .add_source(source)
-        .add_message(format!("Unknown token: `{}`", token))
-        .build()
-}
-
-/// String literal was not terminated
-pub fn unterminated_string_literal(source: Arc<Source>, span: Span) -> CompilerError {
-    CompilerError::error(CompilerError::UNTERMINATED_STRING_LITERAL)
-        .add_span(span)
-        .add_source(source)
-        .add_message("Unterminated string literal".to_string())
-        .build()
-}
-
-/// Char literal was not terminated
-pub fn unterminated_char_literal(source: Arc<Source>, span: Span) -> CompilerError {
-    CompilerError::error(CompilerError::UNTERMINATED_CHAR_LITERAL)
-        .add_span(span)
-        .add_source(source)
-        .add_message("Unterminated char literal".to_string())
-        .build()
-}
-
-/// Char literal has to contain one character
-pub fn char_literal_has_to_contain_one_character(source: Arc<Source>, span: Span) -> CompilerError {
-    CompilerError::error(CompilerError::CHAR_LITERAL_HAS_TO_CONTAIN_ONE_CHARACTER)
-        .add_span(span)
-        .add_source(source)
-        .add_message("Char literal has to contain one character".to_string())
-        .build()
 }
