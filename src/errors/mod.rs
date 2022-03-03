@@ -26,6 +26,17 @@ impl ErrorReport {
     }
 }
 
+impl<T> From<T> for ErrorReport
+where
+    T: IntoIterator<Item = CompilerError>,
+{
+    fn from(errors: T) -> Self {
+        let mut report = Self::new();
+        errors.into_iter().for_each(|e| report.add(e));
+        report
+    }
+}
+
 pub struct CompilerError {
     pub kind: CompilerErrorKind,
     pub code: u32,
@@ -65,7 +76,8 @@ impl CompilerError {
     pub const CHAR_LITERAL_HAS_TO_CONTAIN_ONE_CHARACTER: u32 = 3;
 
     // Syntax errors
-    pub const UNEXPECTED_TOKEN: u32 = 4;
+    pub const UNEXPECTED_TOKEN: u32 = 1000;
+    pub const UNEXPECTED_EOF: u32 = 1001;
 }
 
 pub struct CompilerErrorBuilder {
@@ -102,13 +114,19 @@ impl CompilerErrorBuilder {
         self
     }
 
-    pub fn add_span(mut self, span: Span) -> Self {
-        self.span = Some(span);
+    pub fn add_span<T>(mut self, span: T) -> Self
+    where
+        T: Into<Span>,
+    {
+        self.span = Some(span.into());
         self
     }
 
-    pub fn add_message(mut self, message: String) -> Self {
-        self.message = Some(message);
+    pub fn add_message<T>(mut self, message: T) -> Self
+    where
+        T: Into<String>,
+    {
+        self.message = Some(message.into());
         self
     }
 
