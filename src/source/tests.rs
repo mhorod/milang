@@ -33,17 +33,16 @@ mod span {
     }
 
     #[test]
-    fn union_of_span_vector() {
+    fn spans_union_of_ranges() {
         let spans: Vec<std::ops::Range<usize>> = vec![1..3, 3..5, 2..7];
-        let spans: Vec<Span> = spans.into_iter().map(Span::from).collect();
         let expected = Some(Span::from_range(1, 7));
-        assert_eq!(span_vec_union(&spans), expected);
+        assert_eq!(spans_union(spans), expected);
     }
 
     #[test]
     fn union_of_empty_vector_is_none() {
-        let spans = Vec::new();
-        assert_eq!(span_vec_union(&spans), None);
+        let spans: Vec<Span> = Vec::new();
+        assert_eq!(spans_union(spans), None);
     }
 }
 
@@ -71,7 +70,7 @@ mod break_span_by_lines {
         let span = Span::from_range(0, 6);
         let s = source();
         let spans = s.break_span_by_lines(&span);
-        assert_eq!(span_vec_union(&spans), Some(span));
+        assert_eq!(spans_union(spans), Some(span));
     }
 }
 

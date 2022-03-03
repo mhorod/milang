@@ -41,11 +41,16 @@ pub fn span_union(left: Span, right: Span) -> Span {
     Span::from_range(begin, end)
 }
 
-/// Return union of spans in the vector if its non-empty
+/// Return union of spans in the iterable if its non-empty
 /// None otherwise
-pub fn span_vec_union(spans: &Vec<Span>) -> Option<Span> {
-    let first = spans.first()?;
-    Some(spans.iter().fold(*first, |l, &r| span_union(l, r)))
+pub fn spans_union<T, I>(spans: T) -> Option<Span>
+where
+    T: IntoIterator<Item = I>,
+    I: Into<Span>,
+{
+    let mut it = spans.into_iter();
+    let first = it.next()?;
+    Some(it.fold(first.into(), |l, r| span_union(l, r.into())))
 }
 
 /// Line and column in source file, both indexed from one
@@ -137,5 +142,10 @@ impl Source {
             result.push(Span::from_range(begin, end));
         }
         result
+    }
+
+    /// Returns span of length one representing end of file
+    pub fn eof_span(&self) -> Span {
+        Span::new(self.data.len(), 1)
     }
 }
